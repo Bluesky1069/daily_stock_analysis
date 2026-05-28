@@ -121,10 +121,11 @@ class YfinanceFetcher(BaseFetcher):
             hk_code = hk_code.zfill(4)  # 补齐到4位
             logger.debug(f"转换港股代码: {stock_code} -> {hk_code}.HK")
             return f"{hk_code}.HK"
-
+        
         # 已经包含后缀的情况
-       if '.SS' in code or '.SZ' in code or '.HK' in code or '.BJ' in code or '.TW' in code or '.T' in code:
+        if '.SS' in code or '.SZ' in code or '.HK' in code or '.BJ' in code or '.TW' in code or '.T' in code:
             return code
+            
         # 去除可能的 .SH 后缀
         code = code.replace('.SH', '')
 
