@@ -123,9 +123,8 @@ class YfinanceFetcher(BaseFetcher):
             return f"{hk_code}.HK"
 
         # 已经包含后缀的情况
-        if '.SS' in code or '.SZ' in code or '.HK' in code or '.BJ' in code:
+       if '.SS' in code or '.SZ' in code or '.HK' in code or '.BJ' in code or '.TW' in code or '.T' in code:
             return code
-
         # 去除可能的 .SH 后缀
         code = code.replace('.SH', '')
 
@@ -228,15 +227,16 @@ class YfinanceFetcher(BaseFetcher):
         df = df.reset_index()
 
         # 列名映射（yfinance 使用首字母大写）
+        # 新版 yfinance reset_index 后日期列名为 Datetime，旧版为 Date
         column_mapping = {
             'Date': 'date',
+            'Datetime': 'date',
             'Open': 'open',
             'High': 'high',
             'Low': 'low',
             'Close': 'close',
             'Volume': 'volume',
         }
-
         df = df.rename(columns=column_mapping)
 
         # 计算涨跌幅（因为 yfinance 不直接提供）
