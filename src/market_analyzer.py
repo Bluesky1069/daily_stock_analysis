@@ -146,6 +146,8 @@ class MarketAnalyzer:
             return "US market"
         if self.region == "hk":
             return "Hong Kong market" if review_language == "en" else "港股市场"
+        if self.region == "tw":
+            return "Taiwan market" if review_language == "en" else "台股市场"
         if review_language == "en":
             return "A-share market"
         return "A股市场"
@@ -156,6 +158,8 @@ class MarketAnalyzer:
             return "USD bn" if self._get_review_language() == "en" else "十亿美元"
         if self.region == "hk":
             return "HKD bn" if self._get_review_language() == "en" else "十亿港元"
+        if self.region == "tw":
+            return "TWD 100m" if self._get_review_language() == "en" else "億元"
         return "CNY 100m" if self._get_review_language() == "en" else "亿"
 
     def _format_turnover_value(self, amount_raw: float) -> str:
@@ -1149,7 +1153,7 @@ Market conditions can change quickly. The data above is for reference only and d
 """
             return report
 
-        market_labels = {"cn": "A股", "us": "美股", "hk": "港股"}
+        market_labels = {"cn": "A股", "us": "美股", "hk": "港股", "tw": "台股"}
         market_label = market_labels.get(self.region, "A股")
         dashboard_block = self._build_stats_block(overview)
         indices_block = self._build_indices_block(overview)
