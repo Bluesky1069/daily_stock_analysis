@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import os
 from typing import Any, Dict, Optional
 
 SUPPORTED_REPORT_LANGUAGES = ("zh", "en")
