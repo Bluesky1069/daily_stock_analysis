@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
 """
 大盘复盘市场区域配置
 
 定义各市场区域的指数、新闻搜索词、Prompt 提示等元数据，
 供 MarketAnalyzer 按 region 切换 A 股/美股复盘行为。
 """
-
+import os
 from dataclasses import dataclass
 from typing import List
 
