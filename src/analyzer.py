@@ -2797,7 +2797,7 @@ class GeminiAnalyzer:
 | 最低价 | {today.get('low', 'N/A')} 元 |
 | 涨跌幅 | {today.get('pct_chg', 'N/A')}% |
 | 成交量 | {self._format_volume(today.get('volume'))} |
-| 成交额 | {self._format_amount(today.get('amount'))} |
+| 成交额 | {self._format_amount(today.get('amount'), code)} |
 
 ### 均线系统（关键判断指标）
 | 均线 | 数值 | 说明 |
@@ -2820,8 +2820,8 @@ class GeminiAnalyzer:
 | **换手率** | **{rt.get('turnover_rate', 'N/A')}%** | |
 | 市盈率(动态) | {rt.get('pe_ratio', 'N/A')} | |
 | 市净率 | {rt.get('pb_ratio', 'N/A')} | |
-| 总市值 | {self._format_amount(rt.get('total_mv'))} | |
-| 流通市值 | {self._format_amount(rt.get('circ_mv'))} | |
+| 总市值 | {self._format_amount(rt.get('total_mv'), code)} | |
+| 流通市值 | {self._format_amount(rt.get('circ_mv'), code)} | |
 | 60日涨跌幅 | {rt.get('change_60d', 'N/A')}% | 中期表现 |
 """
 
@@ -3173,16 +3173,17 @@ class GeminiAnalyzer:
         else:
             return f"{volume:.0f} 股"
     
-    def _format_amount(self, amount: Optional[float]) -> str:
-        """格式化成交额显示"""
+  def _format_amount(self, amount: Optional[float], stock_code: str = "") -> str:
+        """格式化成交额/市值显示（按市场选择币种单位）"""
         if amount is None:
             return 'N/A'
+        currency = _amount_currency_unit(stock_code)
         if amount >= 1e8:
-            return f"{amount / 1e8:.2f} 亿元"
+            return f"{amount / 1e8:.2f} 亿{currency}"
         elif amount >= 1e4:
-            return f"{amount / 1e4:.2f} 万元"
+            return f"{amount / 1e4:.2f} 万{currency}"
         else:
-            return f"{amount:.0f} 元"
+            return f"{amount:.0f} {currency}"
 
     def _format_percent(self, value: Optional[float]) -> str:
         """格式化百分比显示"""
@@ -3237,7 +3238,7 @@ class GeminiAnalyzer:
             "change_amount": self._format_price(change_amount),
             "amplitude": self._format_percent(amplitude),
             "volume": self._format_volume(today.get('volume')),
-            "amount": self._format_amount(today.get('amount')),
+            "amount": self._format_amount(today.get('amount'), context.get('code', '')),
         }
 
         if realtime:
