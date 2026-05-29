@@ -82,8 +82,8 @@ def run_market_review(
         if override_region is not None
         else (getattr(config, 'market_review_region', 'cn') or 'cn')
     )
-    _ALL_MARKETS = [('cn', 'cn_title', 'A 股'), ('hk', 'hk_title', '港股'), ('us', 'us_title', '美股')]
-    _VALID_SINGLES = {'cn', 'us', 'hk'}
+    _ALL_MARKETS = [('cn', 'cn_title', 'A 股'), ('hk', 'hk_title', '港股'), ('us', 'us_title', '美股'), ('tw', 'tw_title', '台股')]
+    _VALID_SINGLES = {'cn', 'us', 'hk', 'tw'}
 
     # Determine which markets to run.
     # region can be: 'cn', 'hk', 'us', 'both', or a comma-joined subset like 'cn,us'.
