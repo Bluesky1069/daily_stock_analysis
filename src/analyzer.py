@@ -1019,7 +1019,7 @@ def _first_numeric_value(*values: Any) -> Optional[float]:
         numeric = _coerce_numeric_value(value)
         if numeric is not None:
             return numeric
-return None
+     return None            
 
 
 _A_SHARE_CODE_RE = re.compile(r"^(?:(?:sh|sz|bj)\.?)?\d{6}(?:\.(?:sh|sz|bj))?$", re.IGNORECASE)
