@@ -3172,8 +3172,8 @@ class GeminiAnalyzer:
             return f"{volume / 1e4:.2f} 万股"
         else:
             return f"{volume:.0f} 股"
-    
-  def _format_amount(self, amount: Optional[float], stock_code: str = "") -> str:
+            
+    def _format_amount(self, amount: Optional[float], stock_code: str = "") -> str:
         """格式化成交额/市值显示（按市场选择币种单位）"""
         if amount is None:
             return 'N/A'
