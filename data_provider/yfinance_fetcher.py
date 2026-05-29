@@ -225,7 +225,18 @@ class YfinanceFetcher(BaseFetcher):
             df.columns = df.columns.get_level_values(0)
 
         # 重置索引，将日期从索引变为列
-        df = df.reset_index()
+        # 兼容新旧版yfinance：索引可能叫Date、Datetime或其他
+        if df.index.name in ('Date', 'Datetime', 'date') or hasattr(df.index, 'date'):
+            df = df.reset_index()
+            # 统一把索引列改名为date
+            for col in ['Date', 'Datetime']:
+                if col in df.columns:
+                    df = df.rename(columns={col: 'date'})
+                    break
+        else:
+            df = df.reset_index(drop=True)
+            if 'date' not in df.columns:
+                df.insert(0, 'date', pd.NaT)
 
         # 列名映射（yfinance 使用首字母大写）
         # 新版 yfinance reset_index 后日期列名为 Datetime，旧版为 Date
