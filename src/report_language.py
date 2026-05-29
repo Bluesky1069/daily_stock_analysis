@@ -770,3 +770,41 @@ def get_sentiment_label(score: int, language: Optional[str]) -> str:
     if score >= 20:
         return "悲观"
     return "极度悲观"
+from functools import lru_cache
+
+_CHINESE_VARIANT_TRADITIONAL_ALIASES = {
+    "traditional", "trad", "zh-hant", "zh_hant", "zh-tw", "zh_tw",
+    "tw", "cht", "big5", "繁体", "繁體", "繁",
+}
+
+
+@lru_cache(maxsize=1)
+def _get_opencc_converter():
+    try:
+        from opencc import OpenCC
+    except ImportError:
+        return None
+    # s2twp = 简体 → 繁体（台湾标准 + 习惯用词，如 软件→軟體、信息→資訊）
+    return OpenCC("s2twp")
+
+
+def get_chinese_variant() -> str:
+    raw = (os.getenv("REPORT_CHINESE_VARIANT", "") or "").strip().lower().replace(" ", "_")
+    if raw in _CHINESE_VARIANT_TRADITIONAL_ALIASES:
+        return "traditional"
+    return "simplified"
+
+
+def localize_chinese_variant(text: Optional[str]) -> str:
+    """按 REPORT_CHINESE_VARIANT 把简体输出转成繁体；未配置或未装 opencc 时原样返回。"""
+    if not text:
+        return text
+    if get_chinese_variant() != "traditional":
+        return text
+    converter = _get_opencc_converter()
+    if converter is None:
+        return text  # opencc 没装时安全降级，绝不影响主流程
+    try:
+        return converter.convert(text)
+    except Exception:
+        return text
