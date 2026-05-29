@@ -799,7 +799,8 @@ def stabilize_decision_with_structure(
         flow_bias, flow_reason = _capital_flow_bias_with_status(fundamental_context)
         if flow_bias == "unavailable":
             if isinstance(fundamental_context, dict) and "capital_flow" in fundamental_context:
-                if decision_type == "buy" or advice_decision_type == "buy":
+                capital_flow_expected = _market_has_capital_flow_source(getattr(result, "code", ""))
+                if capital_flow_expected and (decision_type == "buy" or advice_decision_type == "buy"):
                     _downgrade_buy_without_capital_flow(
                         result,
                         language,
@@ -1019,7 +1020,22 @@ def _first_numeric_value(*values: Any) -> Optional[float]:
         if numeric is not None:
             return numeric
     return None
+    
+_A_SHARE_CODE_RE = re.compile(r"^(?:(?:sh|sz|bj)\.?)?\d{6}(?:\.(?:sh|sz|bj))?$", re.IGNORECASE)
 
+
+def _market_has_capital_flow_source(stock_code: str) -> bool:
+    """Return True only for markets that actually provide main-force capital-flow data.
+
+    Main-force net inflow (主力净流入) is sourced from A-share providers
+    (AkShare/Tushare). US / HK / TW and other markets have no equivalent feed,
+    so 'capital flow unavailable' is their normal state and must NOT be treated
+    as a suspicious missing signal that downgrades an otherwise valid buy call.
+    """
+    code = str(stock_code or "").strip()
+    if not code:
+        return False
+    return bool(_A_SHARE_CODE_RE.match(code))
 
 def _capital_flow_bias(fundamental_context: Optional[Dict[str, Any]]) -> str:
     return _capital_flow_bias_with_status(fundamental_context)[0]
