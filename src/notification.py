@@ -42,6 +42,7 @@ from src.report_language import (
     get_chip_unavailable_reason,
     is_chip_structure_unavailable,
     localize_chip_health,
+    localize_chinese_variant,
     localize_operation_advice,
     localize_trend_prediction,
     normalize_report_language,
