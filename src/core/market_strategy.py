@@ -161,7 +161,38 @@ HK_BLUEPRINT = MarketStrategyBlueprint(
         "防守：指数转弱 + 波动率上升，优先风控与减仓。",
     ],
 )
-
+TW_BLUEPRINT = MarketStrategyBlueprint(
+    region="tw",
+    title="台股市场三段式复盘策略",
+    positioning="聚焦加权指数趋势、三大法人资金动向与类股轮动，形成次日交易计划。",
+    principles=[
+        "先看加权指数与柜买指数方向，再看三大法人(尤其外资)买卖超，最后看类股持续性。",
+        "结论必须映射到仓位、节奏与风险控制动作。",
+        "判断使用当日数据与近3日新闻，不臆测未验证信息。",
+    ],
+    dimensions=[
+        StrategyDimension(
+            name="趋势结构",
+            objective="判断市场处于多头、盘整还是防守阶段。",
+            checkpoints=["加权指数与柜买指数是否同向", "量增上涨或量缩下跌是否成立", "关键支撑压力是否被突破"],
+        ),
+        StrategyDimension(
+            name="资金情绪",
+            objective="识别三大法人风险偏好与市场温度。",
+            checkpoints=["外资与投信买卖超方向与规模", "成交量是否扩张", "权值股(如台积电)是否出现分歧"],
+        ),
+        StrategyDimension(
+            name="主线类股",
+            objective="提炼可交易主线与规避方向。",
+            checkpoints=["领涨类股是否具备事件催化", "类股内部是否有龙头带动", "领跌类股是否扩散"],
+        ),
+    ],
+    action_framework=[
+        "进攻：加权指数共振上行 + 外资持续买超 + 主线强化。",
+        "均衡：指数分化或量缩盘整，控制仓位并等待确认。",
+        "防守：指数转弱 + 领跌扩散，优先风控与减仓。",
+    ],
+)
 
 def get_market_strategy_blueprint(region: str) -> MarketStrategyBlueprint:
     """Return strategy blueprint by market region."""
@@ -169,4 +200,6 @@ def get_market_strategy_blueprint(region: str) -> MarketStrategyBlueprint:
         return US_BLUEPRINT
     if region == "hk":
         return HK_BLUEPRINT
+    if region == "tw":
+        return TW_BLUEPRINT
     return CN_BLUEPRINT
