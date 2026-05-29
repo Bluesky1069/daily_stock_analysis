@@ -1019,8 +1019,9 @@ def _first_numeric_value(*values: Any) -> Optional[float]:
         numeric = _coerce_numeric_value(value)
         if numeric is not None:
             return numeric
-    return None
-    
+return None
+
+
 _A_SHARE_CODE_RE = re.compile(r"^(?:(?:sh|sz|bj)\.?)?\d{6}(?:\.(?:sh|sz|bj))?$", re.IGNORECASE)
 
 
@@ -1036,6 +1037,31 @@ def _market_has_capital_flow_source(stock_code: str) -> bool:
     if not code:
         return False
     return bool(_A_SHARE_CODE_RE.match(code))
+
+
+_AMOUNT_CURRENCY_DEFAULT = "元"
+
+
+def _amount_currency_unit(stock_code: str) -> str:
+    """Pick the turnover / market-cap currency word from the stock code's market.
+
+    A-share -> 元 (CNY), Taiwan -> 新台币, Hong Kong -> 港元, US -> 美元.
+    Prevents labelling TW / HK / US amounts with the A-share 元 (RMB) framing.
+    """
+    code = str(stock_code or "").strip()
+    if not code:
+        return _AMOUNT_CURRENCY_DEFAULT
+    upper = code.upper()
+    if upper.endswith(".TW") or upper.endswith(".TWO"):
+        return "新台币"
+    if upper.startswith("HK") or upper.endswith(".HK"):
+        return "港元"
+    if _A_SHARE_CODE_RE.match(code):
+        return "元"
+    if re.fullmatch(r"[A-Za-z][A-Za-z.\-]{0,9}", code):
+        return "美元"
+    return _AMOUNT_CURRENCY_DEFAULT
+
 
 def _capital_flow_bias(fundamental_context: Optional[Dict[str, Any]]) -> str:
     return _capital_flow_bias_with_status(fundamental_context)[0]
