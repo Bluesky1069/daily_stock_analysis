@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 """
 大盘复盘市场区域配置
 
@@ -65,7 +66,31 @@ HK_PROFILE = MarketProfile(
     has_market_stats=False,
     has_sector_rankings=False,
 )
+TW_NEWS_QUERIES = [
+    "台股 大盤 盤後",
+    "Taiwan stock market",
+    "台股 加權指數 走勢",
+]
 
+# lite：只取指数 + 新闻（测试 / 快速复盘用）
+TW_LITE_PROFILE = MarketProfile(
+    region="tw",
+    mood_index_code="TWSE",
+    news_queries=TW_NEWS_QUERIES,
+    prompt_index_hint="分析台股加權指數、櫃買指數等各指數走勢特點",
+    has_market_stats=False,
+    has_sector_rankings=False,
+)
+
+# full：再加涨跌家数 + 类股榜（正式上线用，需要 region 感知的数据层支持）
+TW_FULL_PROFILE = MarketProfile(
+    region="tw",
+    mood_index_code="TWSE",
+    news_queries=TW_NEWS_QUERIES,
+    prompt_index_hint="分析台股加權指數、櫃買指數等各指數走勢特點",
+    has_market_stats=True,
+    has_sector_rankings=True,
+)
 
 def get_profile(region: str) -> MarketProfile:
     """根据 region 返回对应的 MarketProfile"""
@@ -73,4 +98,7 @@ def get_profile(region: str) -> MarketProfile:
         return US_PROFILE
     if region == "hk":
         return HK_PROFILE
+    if region == "tw":
+        detail = (os.getenv("MARKET_REVIEW_DETAIL", "lite") or "lite").strip().lower()
+        return TW_FULL_PROFILE if detail in ("full", "complete", "detailed") else TW_LITE_PROFILE
     return CN_PROFILE
