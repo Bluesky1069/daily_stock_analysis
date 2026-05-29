@@ -1,6 +1,7 @@
 # ===================================
 # A股自选股智能分析系统 - 依赖列表
 # ===================================
+opencc-python-reimplemented>=0.1.7   # 简繁转换（REPORT_CHINESE_VARIANT=traditional 时启用）
 
 # 核心依赖
 python-dotenv>=1.0.0        # 环境变量配置管理
@@ -66,4 +67,3 @@ fastapi>=0.109.0            # 现代 Python Web 框架
 uvicorn[standard]>=0.27.0   # ASGI 服务器
 python-multipart>=0.0.6     # FastAPI File/Form upload support
 
-opencc-python-reimplemented
