@@ -1822,6 +1822,7 @@ class NotificationService(
         Returns:
             Structured dispatch diagnostics.
         """
+        content = localize_chinese_variant(content)
         context_success = self.send_to_context(content)
 
         if not self._available_channels:
