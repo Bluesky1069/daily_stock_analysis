@@ -31,13 +31,14 @@ except ImportError:
     )
 
 # Market -> exchange code (exchange-calendars)
-MARKET_EXCHANGE = {"cn": "XSHG", "hk": "XHKG", "us": "XNYS"}
+MARKET_EXCHANGE = {"cn": "XSHG", "hk": "XHKG", "us": "XNYS", "tw": "XTAI"}
 
 # Market -> IANA timezone for "today"
 MARKET_TIMEZONE = {
     "cn": "Asia/Shanghai",
     "hk": "Asia/Hong_Kong",
     "us": "America/New_York",
+    "tw": "Asia/Taipei",
 }
 
 
@@ -172,7 +173,7 @@ def get_open_markets_today() -> Set[str]:
         Set of market keys ('cn', 'hk', 'us') that are trading today
     """
     if not _XCALS_AVAILABLE:
-        return {"cn", "hk", "us"}
+        return {"cn", "hk", "us", "tw"}
     result: Set[str] = set()
     for mkt, tz_name in MARKET_TIMEZONE.items():
         try:
@@ -201,9 +202,9 @@ def compute_effective_region(
         '': all relevant markets closed, skip market review
         'cn' | 'hk' | 'us' | 'both': effective subset for today
     """
-    if config_region not in ("cn", "hk", "us", "both"):
+    if config_region not in ("cn", "hk", "us", "tw" ,"both"):
         config_region = "cn"
-    if config_region in ("cn", "hk", "us"):
+    if config_region in ("cn", "hk", "us", "tw"):
         return config_region if config_region in open_markets else ""
     # both: return only the markets that are actually open today
     parts = [m for m in ("cn", "hk", "us") if m in open_markets]
