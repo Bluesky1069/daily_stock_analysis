@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-import re
 import os
+import re
 from typing import Any, Dict, Optional
 
 SUPPORTED_REPORT_LANGUAGES = ("zh", "en")
