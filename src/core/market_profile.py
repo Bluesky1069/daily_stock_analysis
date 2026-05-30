@@ -81,13 +81,14 @@ TW_LITE_PROFILE = MarketProfile(
     has_sector_rankings=False,
 )
 
-# full：再加涨跌家数 + 类股榜（正式上线用，需要 region 感知的数据层支持）
+# full：lite + 类股榜（类股来自 TWSE openapi MI_INDEX）。
+# 涨跌家数 openapi 无端点，待后续接官网 api 再开 has_market_stats。
 TW_FULL_PROFILE = MarketProfile(
     region="tw",
     mood_index_code="TWSE",
     news_queries=TW_NEWS_QUERIES,
     prompt_index_hint="分析台股加權指數、櫃買指數等各指數走勢特點",
-    has_market_stats=True,
+    has_market_stats=False,
     has_sector_rankings=True,
 )
 

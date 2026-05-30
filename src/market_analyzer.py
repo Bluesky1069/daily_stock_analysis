@@ -381,7 +381,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         try:
             logger.info("[大盘] 获取板块涨跌榜...")
 
-            top_sectors, bottom_sectors = self.data_manager.get_sector_rankings(5)
+            top_sectors, bottom_sectors = self.data_manager.get_sector_rankings(5, region=self.region)
 
             if top_sectors or bottom_sectors:
                 overview.top_sectors = top_sectors

@@ -41,3 +41,23 @@ def is_tw_stock_code(code: str) -> bool:
     if c.isdigit() and len(c) == 4:
         return True
     return False
+
+
+# ---- 类股榜 (full): TWSE 开放 API ----
+# 每日收盘行情-大盘统计资讯, 返回各类指数 {日期, 指數, 收盤指數, 漲跌, 漲跌點數, 漲跌百分比}
+# 注意: openapi 只提供前一交易日数据, 不含涨跌家数。
+TWSE_MI_INDEX_URL = "https://openapi.twse.com.tw/v1/exchangeReport/MI_INDEX"
+
+# 台股产业类指数一律以「類指數」结尾 (半導體類指數/金融保險類指數/航運類指數...);
+# 主题/ESG/规模指数 (寶島股價指數/臺灣50指數/臺灣AI供應鏈聯盟指數) 不以此结尾, 天然排除。
+TW_CATEGORY_INDEX_SUFFIX = "類指數"
+
+
+def tw_category_short_name(index_name: str) -> str:
+    """类指数显示简称: 半導體類指數 -> 半導體; 取不到则原样返回。"""
+    if not index_name:
+        return index_name
+    name = index_name.strip()
+    if name.endswith(TW_CATEGORY_INDEX_SUFFIX):
+        return name[: -len(TW_CATEGORY_INDEX_SUFFIX)].strip() or name
+    return name

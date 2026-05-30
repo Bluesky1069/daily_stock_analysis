@@ -1007,10 +1007,12 @@ class EfinanceFetcher(BaseFetcher):
             
         return stats
 
-    def get_sector_rankings(self, n: int = 5) -> Optional[Tuple[List[Dict], List[Dict]]]:
+    def get_sector_rankings(self, n: int = 5, region: str = "cn") -> Optional[Tuple[List[Dict], List[Dict]]]:
         """
         获取板块涨跌榜 (efinance)
         """
+        if region != "cn":
+            return None
         import efinance as ef
 
         try:

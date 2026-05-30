@@ -342,12 +342,13 @@ class BaseFetcher(ABC):
         """
         return None
 
-    def get_sector_rankings(self, n: int = 5) -> Optional[Tuple[List[Dict], List[Dict]]]:
+    def get_sector_rankings(self, n: int = 5, region: str = "cn") -> Optional[Tuple[List[Dict], List[Dict]]]:
         """
         获取板块涨跌榜
 
         Args:
             n: 返回前n个
+            region: 市场区域，cn=A股；其他市场由对应数据源实现
 
         Returns:
             Tuple: (领涨板块列表, 领跌板块列表)
@@ -2670,6 +2671,7 @@ class DataFetcherManager:
     def _get_sector_rankings_with_meta(
             self,
             n: int = 5,
+            region: str = "cn",
         ) -> Tuple[List[Dict], List[Dict], List[Dict[str, Any]], str]:
             """Get sector rankings with ordered fallback chain metadata."""
             source_chain: List[Dict[str, Any]] = []
@@ -2682,7 +2684,7 @@ class DataFetcherManager:
 
                 start = time.time()
                 try:
-                    data = fetcher.get_sector_rankings(n)
+                    data = fetcher.get_sector_rankings(n, region)
                     duration_ms = int((time.time() - start) * 1000)
                     if data and data[0] is not None and data[1] is not None:
                         source_chain.append(
@@ -2720,10 +2722,10 @@ class DataFetcherManager:
 
             return [], [], source_chain, last_error
 
-    def get_sector_rankings(self, n: int = 5) -> Tuple[List[Dict], List[Dict]]:
+    def get_sector_rankings(self, n: int = 5, region: str = "cn") -> Tuple[List[Dict], List[Dict]]:
         """获取板块涨跌榜（自动切换数据源）"""
         # 按需求固定回退顺序：Akshare(EM) -> Akshare(Sina) -> Tushare -> Efinance
-        top, bottom, _, last_error = self._get_sector_rankings_with_meta(n)
+        top, bottom, _, last_error = self._get_sector_rankings_with_meta(n, region)
         if top or bottom:
             return top, bottom
         logger.warning(f"[板块排行] 所有数据源均失败，最终错误: {last_error}")

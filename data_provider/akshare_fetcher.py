@@ -1745,7 +1745,7 @@ class AkshareFetcher(BaseFetcher):
             
         return stats
 
-    def get_sector_rankings(self, n: int = 5) -> Optional[Tuple[List[Dict], List[Dict]]]:
+    def get_sector_rankings(self, n: int = 5, region: str = "cn") -> Optional[Tuple[List[Dict], List[Dict]]]:
         """
         获取行业板块涨跌榜
 
@@ -1753,6 +1753,8 @@ class AkshareFetcher(BaseFetcher):
         1. 东财接口 (ak.stock_board_industry_name_em)
         2. 新浪接口 (ak.stock_sector_spot)
         """
+        if region != "cn":
+            return None
         import akshare as ak
 
         def _get_rank_top_n(df: pd.DataFrame, change_col: str, industry_name: str, n: int) -> Tuple[list, list]:

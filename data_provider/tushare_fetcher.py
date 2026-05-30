@@ -1047,7 +1047,7 @@ class TushareFetcher(BaseFetcher):
 
         return start_date
     
-    def get_sector_rankings(self, n: int = 5) -> Optional[Tuple[list, list]]:
+    def get_sector_rankings(self, n: int = 5, region: str = "cn") -> Optional[Tuple[list, list]]:
         """
         获取行业板块涨跌榜 (Tushare Pro)
         
@@ -1056,6 +1056,9 @@ class TushareFetcher(BaseFetcher):
         2. 东财接口 (ts.pro_api().moneyflow_ind_dc)
         注意：每个接口的行业分类和板块定义不同，会导致结果两者不一致
         """
+        if region != "cn":
+            return None
+
         def _get_rank_top_n(df: pd.DataFrame, change_col: str, industry_name: str, n: int) -> Tuple[list, list]:
             df[change_col] = pd.to_numeric(df[change_col], errors='coerce')
             df = df.dropna(subset=[change_col])
