@@ -83,16 +83,28 @@ class TwIndexFetcher(BaseFetcher):
 
         item = self._fetch_taiex_from_fugle()
         if item is not None:
-            logger.info("[TwIndex] 加权指数由 Fugle(IX0001) 取得")
+            self._log_fetched("Fugle(IX0001)", item)
             return [item]
 
         item = self._fetch_taiex_from_yfinance()
         if item is not None:
-            logger.info("[TwIndex] 加权指数由 yfinance(^TWII) 兜底取得")
+            self._log_fetched("yfinance(^TWII)", item)
             return [item]
 
         logger.warning("[TwIndex] 加权指数 Fugle 与 yfinance 两路均失败")
         return None
+
+    @staticmethod
+    def _log_fetched(source: str, item: Dict[str, Any]) -> None:
+        # 打印原始字段便于核对 Fugle 字段映射与量级 (amount 单位为元 TWD)
+        logger.info(
+            "[TwIndex] 加权指数由 %s 取得: current=%s change=%s change_pct=%s%% "
+            "open=%s high=%s low=%s amplitude=%s%% volume=%s amount(元)=%s",
+            source,
+            item.get("current"), item.get("change"), item.get("change_pct"),
+            item.get("open"), item.get("high"), item.get("low"),
+            item.get("amplitude"), item.get("volume"), item.get("amount"),
+        )
 
     def _fetch_taiex_from_fugle(self) -> Optional[Dict[str, Any]]:
         client = self._get_client()
