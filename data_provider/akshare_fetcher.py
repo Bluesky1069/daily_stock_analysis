@@ -1620,7 +1620,7 @@ class AkshareFetcher(BaseFetcher):
             logger.error(f"[Akshare] 获取指数行情失败: {e}")
             return None
 
-    def get_market_stats(self) -> Optional[Dict[str, Any]]:
+    def get_market_stats(self, region: str = "cn") -> Optional[Dict[str, Any]]:
         """
         获取市场涨跌统计
 
@@ -1628,6 +1628,8 @@ class AkshareFetcher(BaseFetcher):
         1. 东财接口 (ak.stock_zh_a_spot_em)
         2. 新浪接口 (ak.stock_zh_a_spot)
         """
+        if region != "cn":
+            return None
         import akshare as ak
 
         # 优先东财接口

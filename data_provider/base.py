@@ -341,9 +341,12 @@ class BaseFetcher(ABC):
         """
         return None
 
-    def get_market_stats(self) -> Optional[Dict[str, Any]]:
+    def get_market_stats(self, region: str = "cn") -> Optional[Dict[str, Any]]:
         """
         获取市场涨跌统计
+
+        Args:
+            region: 市场区域，cn=A股；其他市场由对应数据源实现
 
         Returns:
             Dict: 包含:
@@ -1908,21 +1911,23 @@ class DataFetcherManager:
                 continue
         return []
 
-    def get_market_stats(self) -> Dict[str, Any]:
+    def get_market_stats(self, region: str = "cn") -> Dict[str, Any]:
         """获取市场涨跌统计（自动切换数据源）"""
-        tickflow_fetcher = self._get_tickflow_fetcher()
-        if tickflow_fetcher is not None:
-            try:
-                data = tickflow_fetcher.get_market_stats()
-                if data:
-                    logger.info("[TickFlowFetcher] 获取市场统计成功")
-                    return data
-            except Exception as e:
-                logger.warning(f"[TickFlowFetcher] 获取市场统计失败: {e}")
+        # TickFlow 仅服务 A 股
+        if region == "cn":
+            tickflow_fetcher = self._get_tickflow_fetcher()
+            if tickflow_fetcher is not None:
+                try:
+                    data = tickflow_fetcher.get_market_stats()
+                    if data:
+                        logger.info("[TickFlowFetcher] 获取市场统计成功")
+                        return data
+                except Exception as e:
+                    logger.warning(f"[TickFlowFetcher] 获取市场统计失败: {e}")
 
         for fetcher in self._fetchers:
             try:
-                data = fetcher.get_market_stats()
+                data = fetcher.get_market_stats(region)
                 if data:
                     logger.info(f"[{fetcher.name}] 获取市场统计成功")
                     return data

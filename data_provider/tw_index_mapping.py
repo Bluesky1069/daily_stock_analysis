@@ -51,6 +51,10 @@ TWSE_MI_INDEX_URL = "https://openapi.twse.com.tw/v1/exchangeReport/MI_INDEX"
 # 上市公司名录 (公司代號/公司簡稱/公司名稱), 用于台股个股中文简称 (2330 -> 台積電)
 TWSE_COMPANY_LIST_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
 
+# 官网盘后大盘统计 (type=MS): 含「漲跌證券數合計」(涨跌家数) + 「大盤統計資訊」(成交额)。
+# 需 date 参数 (西元 YYYYMMDD)。注: 官网 api 不如 openapi 稳定 (偶发防爬), 仅 full 涨跌家数用。
+TWSE_MI_INDEX_MS_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={date}&type=MS&response=json"
+
 # 台股产业类指数一律以「類指數」结尾 (半導體類指數/金融保險類指數/航運類指數...);
 # 主题/ESG/规模指数 (寶島股價指數/臺灣50指數/臺灣AI供應鏈聯盟指數) 不以此结尾, 天然排除。
 TW_CATEGORY_INDEX_SUFFIX = "類指數"

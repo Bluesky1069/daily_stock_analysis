@@ -23,6 +23,7 @@ from .tw_index_mapping import (
     TAIEX_INDEX_CODE,
     TAIEX_NAME,
     TWSE_MI_INDEX_URL,
+    TWSE_MI_INDEX_MS_URL,
     TWSE_COMPANY_LIST_URL,
     TW_CATEGORY_INDEX_SUFFIX,
     tw_category_short_name,
@@ -130,6 +131,104 @@ class TwIndexFetcher(BaseFetcher):
             [s["name"] for s in top], [s["name"] for s in bottom],
         )
         return top, bottom
+
+    # ---- 涨跌家数 + 成交额 (full): 官网盘后 MI_INDEX type=MS ----
+    def get_market_stats(self, region: str = "cn") -> Optional[Dict[str, Any]]:
+        if region != "tw":
+            return None
+        date_str = self._tw_effective_date()
+        if not date_str:
+            return None
+        data = self._twse_get_json(
+            TWSE_MI_INDEX_MS_URL.format(date=date_str), f"TWSE 漲跌家數({date_str})"
+        )
+        if not isinstance(data, dict) or data.get("stat") != "OK":
+            stat = data.get("stat") if isinstance(data, dict) else type(data).__name__
+            logger.warning(f"[TwIndex] TWSE 漲跌家數 返回非 OK: {stat}")
+            return None
+        tables = data.get("tables") or []
+        breadth = self._parse_tw_breadth(tables)
+        if breadth is None:
+            logger.warning("[TwIndex] TWSE 漲跌家數 未找到漲跌證券數合計表")
+            return None
+        breadth["total_amount"] = self._parse_tw_turnover(tables)
+        logger.info(
+            "[TwIndex] 涨跌家数由 TWSE(%s) 取得: 涨%s(涨停%s) 跌%s(跌停%s) 平%s 成交额%.0f億",
+            date_str, breadth["up_count"], breadth["limit_up_count"],
+            breadth["down_count"], breadth["limit_down_count"],
+            breadth["flat_count"], breadth["total_amount"],
+        )
+        return breadth
+
+    @staticmethod
+    def _tw_effective_date() -> Optional[str]:
+        try:
+            from src.core.trading_calendar import get_effective_trading_date
+            return get_effective_trading_date("tw").strftime("%Y%m%d")
+        except Exception as e:
+            logger.warning(f"[TwIndex] 取台股最近交易日失败: {e}")
+            return None
+
+    @staticmethod
+    def _parse_tw_count(value: Any):
+        """'9,879(419)' -> (9879, 419); '805' -> (805, 0)。"""
+        import re
+        s = str(value).replace(",", "").strip()
+        m = re.match(r"(\d+)(?:\((\d+)\))?", s)
+        if not m:
+            return None, 0
+        return int(m.group(1)), (int(m.group(2)) if m.group(2) else 0)
+
+    def _parse_tw_breadth(self, tables) -> Optional[Dict[str, Any]]:
+        target = next(
+            (t for t in tables
+             if isinstance(t, dict) and "漲跌證券數" in str(t.get("title", ""))),
+            None,
+        )
+        if target is None:
+            return None
+        fields = target.get("fields") or []
+        # 取「股票」列 (个股口径), 取不到退用最后一列
+        col = fields.index("股票") if "股票" in fields else (len(fields) - 1 if fields else 2)
+        up = down = flat = limit_up = limit_down = 0
+        for row in target.get("data") or []:
+            if not isinstance(row, list) or len(row) <= col:
+                continue
+            label = str(row[0])
+            main, paren = self._parse_tw_count(row[col])
+            if main is None:
+                continue
+            if label.startswith("上漲"):
+                up, limit_up = main, paren
+            elif label.startswith("下跌"):
+                down, limit_down = main, paren
+            elif label.startswith("持平"):
+                flat = main
+        return {
+            "up_count": up,
+            "down_count": down,
+            "flat_count": flat,
+            "limit_up_count": limit_up,
+            "limit_down_count": limit_down,
+        }
+
+    def _parse_tw_turnover(self, tables) -> float:
+        """大盤統計資訊: 取「一般股票」成交金額(元) 折算億元。"""
+        for t in tables:
+            if not isinstance(t, dict):
+                continue
+            fields = t.get("fields") or []
+            if "成交金額(元)" not in fields:
+                continue
+            amt_col = fields.index("成交金額(元)")
+            for row in t.get("data") or []:
+                if not isinstance(row, list) or len(row) <= amt_col:
+                    continue
+                if "一般股票" in str(row[0]):
+                    amt = self._safe_num(str(row[amt_col]).replace(",", ""))
+                    if amt is not None:
+                        return round(amt / 1e8, 0)
+        return 0.0
 
     def _twse_get_json(self, url: str, label: str, retries: int = 2, timeout: int = 15):
         """带重试地请求 TWSE openapi JSON（openapi 偶发连接超时，单次失败会丢数据）。"""

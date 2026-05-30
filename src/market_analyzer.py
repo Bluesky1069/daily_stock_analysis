@@ -359,7 +359,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         try:
             logger.info("[大盘] 获取市场涨跌统计...")
 
-            stats = self.data_manager.get_market_stats()
+            stats = self.data_manager.get_market_stats(region=self.region)
 
             if stats:
                 overview.up_count = stats.get('up_count', 0)

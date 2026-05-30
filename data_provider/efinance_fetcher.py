@@ -887,10 +887,12 @@ class EfinanceFetcher(BaseFetcher):
             logger.error(f"[efinance] 获取指数行情失败: {e}")
             return None
 
-    def get_market_stats(self) -> Optional[Dict[str, Any]]:
+    def get_market_stats(self, region: str = "cn") -> Optional[Dict[str, Any]]:
         """
         获取市场涨跌统计 (efinance)
         """
+        if region != "cn":
+            return None
         import efinance as ef
 
         try:
