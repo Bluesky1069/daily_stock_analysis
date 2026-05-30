@@ -131,26 +131,35 @@ class TwIndexFetcher(BaseFetcher):
         )
         return top, bottom
 
-    def _fetch_twse_category_indices(self) -> Optional[List[Dict[str, Any]]]:
+    def _twse_get_json(self, url: str, label: str, retries: int = 2, timeout: int = 15):
+        """带重试地请求 TWSE openapi JSON（openapi 偶发连接超时，单次失败会丢数据）。"""
         try:
             import requests
         except Exception as e:
             logger.warning(f"[TwIndex] requests 不可用: {e}")
             return None
-        try:
-            self.random_sleep(0.2, 0.5)
-            resp = requests.get(
-                TWSE_MI_INDEX_URL,
-                timeout=10,
-                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-        except Exception as e:
-            logger.warning(f"[TwIndex] TWSE MI_INDEX 取得失败: {e}")
-            return None
+        last_err = None
+        for attempt in range(1, retries + 1):
+            try:
+                self.random_sleep(0.2, 0.5)
+                resp = requests.get(
+                    url,
+                    timeout=timeout,
+                    headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+                )
+                resp.raise_for_status()
+                return resp.json()
+            except Exception as e:
+                last_err = e
+                logger.warning(f"[TwIndex] {label} 第 {attempt}/{retries} 次取得失败: {e}")
+        logger.warning(f"[TwIndex] {label} 重试耗尽: {last_err}")
+        return None
+
+    def _fetch_twse_category_indices(self) -> Optional[List[Dict[str, Any]]]:
+        data = self._twse_get_json(TWSE_MI_INDEX_URL, "TWSE MI_INDEX")
         if not isinstance(data, list):
-            logger.warning(f"[TwIndex] TWSE MI_INDEX 返回非预期结构: {type(data)}")
+            if data is not None:
+                logger.warning(f"[TwIndex] TWSE MI_INDEX 返回非预期结构: {type(data)}")
             return None
 
         results: List[Dict[str, Any]] = []
@@ -295,26 +304,15 @@ class TwIndexFetcher(BaseFetcher):
         if self._tw_name_map is not None:
             return self._tw_name_map
         result: Dict[str, str] = {}
-        try:
-            import requests
-            self.random_sleep(0.2, 0.5)
-            resp = requests.get(
-                TWSE_COMPANY_LIST_URL,
-                timeout=10,
-                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            if isinstance(data, list):
-                for row in data:
-                    if not isinstance(row, dict):
-                        continue
-                    c = str(row.get("公司代號", "")).strip()
-                    nm = str(row.get("公司簡稱", "")).strip()
-                    if c and nm:
-                        result[c] = nm
-            logger.info("[TwIndex] 载入 TWSE 上市公司名录 %d 笔", len(result))
-        except Exception as e:
-            logger.warning(f"[TwIndex] 载入 TWSE 公司名录失败: {e}")
+        data = self._twse_get_json(TWSE_COMPANY_LIST_URL, "TWSE 上市公司名录")
+        if isinstance(data, list):
+            for row in data:
+                if not isinstance(row, dict):
+                    continue
+                c = str(row.get("公司代號", "")).strip()
+                nm = str(row.get("公司簡稱", "")).strip()
+                if c and nm:
+                    result[c] = nm
+        logger.info("[TwIndex] 载入 TWSE 上市公司名录 %d 笔", len(result))
         self._tw_name_map = result
         return result
