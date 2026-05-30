@@ -328,6 +328,10 @@ class YfinanceFetcher(BaseFetcher):
             return self._get_us_main_indices(yf)
         if region == "hk":
             return self._get_hk_main_indices(yf)
+        # 仅 cn 走下方 A 股指数逻辑；其他 region（如 tw）必须返回 None，
+        # 否则会用雅虎代码抓 A 股指数, 抢在台股专用 fetcher 之前污染台股复盘。
+        if region != "cn":
+            return None
 
         # A 股指数：akshare 代码 -> (yfinance 代码, 显示名称)
         yf_mapping = {

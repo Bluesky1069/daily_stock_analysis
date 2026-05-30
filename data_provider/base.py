@@ -1077,6 +1077,19 @@ class DataFetcherManager:
         else:
             logger.debug("[数据源初始化] 跳过未配置的 AlphaVantageFetcher")
 
+        # 台股指数 (lite): 仅在配置 FUGLE_API_KEY 时注册, 只服务 get_main_indices
+        import os
+        fugle_api_key = (
+            getattr(config, "fugle_api_key", None)
+            or os.getenv("FUGLE_API_KEY")
+            or ""
+        ).strip()
+        if fugle_api_key:
+            from .tw_fetcher import TwIndexFetcher
+            optional_fetchers.append(TwIndexFetcher())
+        else:
+            logger.debug("[数据源初始化] 跳过未配置的 TwIndexFetcher")
+
         # 初始化数据源列表
         self._ensure_concurrency_guards()
         with self._fetchers_lock:

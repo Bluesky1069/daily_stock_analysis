@@ -346,7 +346,8 @@ jobs:
           MARKET_REVIEW_REGION: ${{ vars.MARKET_REVIEW_REGION || secrets.MARKET_REVIEW_REGION || 'cn' }}
           MARKET_REVIEW_DETAIL: ${{ vars.MARKET_REVIEW_DETAIL || secrets.MARKET_REVIEW_DETAIL || 'lite' }}
           MARKET_REVIEW_COLOR_SCHEME: ${{ vars.MARKET_REVIEW_COLOR_SCHEME || secrets.MARKET_REVIEW_COLOR_SCHEME || 'green_up' }}
-          
+          FUGLE_API_KEY: ${{ secrets.FUGLE_API_KEY }}
+
           # ==========================================
           # 运行配置 ⬅️ 新增！
           # ==========================================
