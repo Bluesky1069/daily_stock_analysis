@@ -748,11 +748,16 @@ class YfinanceFetcher(BaseFetcher):
                 amplitude = ((high - low) / prev_close) * 100
 
             # 获取股票名称
-            try:
-                info_name = ticker.info.get('shortName', '') or ticker.info.get('longName', '') or ''
-                name = info_name if is_meaningful_stock_name(info_name, symbol) else STOCK_NAME_MAP.get(symbol, '')
-            except Exception:
+            if is_tw:
+                # 台股: 不取 yahoo 英文名 (并省去较慢的 ticker.info 调用)，留空，
+                # 让上层保留 manager.get_stock_name 经 TWSE 名录拿到的中文简称
                 name = STOCK_NAME_MAP.get(symbol, '')
+            else:
+                try:
+                    info_name = ticker.info.get('shortName', '') or ticker.info.get('longName', '') or ''
+                    name = info_name if is_meaningful_stock_name(info_name, symbol) else STOCK_NAME_MAP.get(symbol, '')
+                except Exception:
+                    name = STOCK_NAME_MAP.get(symbol, '')
 
             quote = UnifiedRealtimeQuote(
                 code=symbol,
