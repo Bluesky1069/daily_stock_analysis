@@ -23,6 +23,7 @@ from .tw_index_mapping import (
     TAIEX_INDEX_CODE,
     TAIEX_NAME,
     TWSE_MI_INDEX_URL,
+    TWSE_COMPANY_LIST_URL,
     TW_CATEGORY_INDEX_SUFFIX,
     tw_category_short_name,
 )
@@ -43,12 +44,14 @@ class TwIndexFetcher(BaseFetcher):
             or ""
         ).strip()
         self._client = None
+        self._tw_name_map = None  # 台股上市公司名录缓存 (代号 -> 中文简称)
         if not self._api_key:
             logger.debug("[TwIndex] 未配置 FUGLE_API_KEY, 将仅依赖 yfinance 兜底")
 
-    # 把本 fetcher 关在 get_main_indices 这一条路上 (见模块 docstring)
+    # 仅对外开放「台股个股名称」能力; 大盘复盘 (main_indices/sector_rankings) 的 manager
+    # 循环不查 capability, 故仍可用; daily_data/realtime 等查 capability 的路径保持隔离。
     def is_available_for_request(self, capability: str = "") -> bool:
-        return False
+        return capability == "stock_name"
 
     # BaseFetcher 抽象方法; lite 不做个股日线, 故显式拒绝以暴露误用
     def _fetch_raw_data(self, stock_code, start_date, end_date):
@@ -273,3 +276,45 @@ class TwIndexFetcher(BaseFetcher):
             "amount": None,  # yfinance 不提供成交金额
             "amplitude": amplitude,
         }
+
+    # ---- 台股个股中文名 (TWSE 上市公司名录) ----
+    def get_stock_name(self, stock_code: str) -> Optional[str]:
+        code = (stock_code or "").strip().upper()
+        if code.endswith(".TW") or code.endswith(".TWO"):
+            digits = code.rsplit(".", 1)[0]
+        elif code.isdigit():
+            digits = code
+        else:
+            return None
+        if not digits.isdigit():
+            return None
+        name_map = self._get_tw_name_map()
+        return name_map.get(digits) if name_map else None
+
+    def _get_tw_name_map(self) -> Dict[str, str]:
+        if self._tw_name_map is not None:
+            return self._tw_name_map
+        result: Dict[str, str] = {}
+        try:
+            import requests
+            self.random_sleep(0.2, 0.5)
+            resp = requests.get(
+                TWSE_COMPANY_LIST_URL,
+                timeout=10,
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                for row in data:
+                    if not isinstance(row, dict):
+                        continue
+                    c = str(row.get("公司代號", "")).strip()
+                    nm = str(row.get("公司簡稱", "")).strip()
+                    if c and nm:
+                        result[c] = nm
+            logger.info("[TwIndex] 载入 TWSE 上市公司名录 %d 笔", len(result))
+        except Exception as e:
+            logger.warning(f"[TwIndex] 载入 TWSE 公司名录失败: {e}")
+        self._tw_name_map = result
+        return result

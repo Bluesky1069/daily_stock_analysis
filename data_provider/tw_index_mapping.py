@@ -48,6 +48,9 @@ def is_tw_stock_code(code: str) -> bool:
 # 注意: openapi 只提供前一交易日数据, 不含涨跌家数。
 TWSE_MI_INDEX_URL = "https://openapi.twse.com.tw/v1/exchangeReport/MI_INDEX"
 
+# 上市公司名录 (公司代號/公司簡稱/公司名稱), 用于台股个股中文简称 (2330 -> 台積電)
+TWSE_COMPANY_LIST_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
+
 # 台股产业类指数一律以「類指數」结尾 (半導體類指數/金融保險類指數/航運類指數...);
 # 主题/ESG/规模指数 (寶島股價指數/臺灣50指數/臺灣AI供應鏈聯盟指數) 不以此结尾, 天然排除。
 TW_CATEGORY_INDEX_SUFFIX = "類指數"

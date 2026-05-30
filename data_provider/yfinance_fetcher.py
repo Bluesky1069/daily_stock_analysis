@@ -690,9 +690,10 @@ class YfinanceFetcher(BaseFetcher):
                 index_name=index_name,
             )
 
-        # 仅处理美股股票
-        if not self._is_us_stock(stock_code):
-            logger.debug(f"[Yfinance] {stock_code} 不是美股，跳过")
+        # 美股个股 + 台股个股（.TW/.TWO，yahoo 直接支持该后缀行情）
+        is_tw = stock_code.strip().upper().endswith((".TW", ".TWO"))
+        if not self._is_us_stock(stock_code) and not is_tw:
+            logger.debug(f"[Yfinance] {stock_code} 非美股/台股，跳过")
             return None
 
         try:

@@ -145,6 +145,20 @@ def _is_hk_market(code: str) -> bool:
     return False
 
 
+def _is_tw_market(code: str) -> bool:
+    """
+    判定台股个股代码（仅认 .TW / .TWO 后缀）。
+
+    裸 4 位数字虽与 A 股 6 位/港股 5 位不冲突，但台股 ETF 为 5~6 位会与之冲突，
+    故个股路由只信任带 .TW/.TWO 后缀的明确写法，避免误判。
+    """
+    normalized = (code or "").strip().upper()
+    if normalized.endswith(".TW") or normalized.endswith(".TWO"):
+        base = normalized.rsplit(".", 1)[0]
+        return base.isdigit() and 4 <= len(base) <= 6
+    return False
+
+
 def _is_etf_code(code: str) -> bool:
     """判定 A 股 ETF 基金代码（保守规则）。"""
     normalized = normalize_stock_code(code)
@@ -551,7 +565,7 @@ class DataFetcherManager:
         "TushareFetcher": {"cn", "hk"},
         "PytdxFetcher": {"cn"},
         "BaostockFetcher": {"cn"},
-        "YfinanceFetcher": {"cn", "hk", "us"},
+        "YfinanceFetcher": {"cn", "hk", "us", "tw"},
         "LongbridgeFetcher": {"hk", "us"},
         "FinnhubFetcher": {"us"},
         "AlphaVantageFetcher": {"us"},
@@ -676,7 +690,7 @@ class DataFetcherManager:
         market: str,
     ) -> List[BaseFetcher]:
         """Skip built-in daily fetchers that are known not to support a market."""
-        if market not in {"cn", "hk", "us"}:
+        if market not in {"cn", "hk", "us", "tw"}:
             return fetchers
 
         kept: List[BaseFetcher] = []
@@ -1164,13 +1178,17 @@ class DataFetcherManager:
         is_us_index = is_us_index_code(stock_code)
         is_us = is_us_index or is_us_stock_code(stock_code)
         is_hk = (not is_us) and _is_hk_market(stock_code)
+        is_tw = (not is_us) and (not is_hk) and _is_tw_market(stock_code)
         if is_hk:
             fetchers = self._filter_daily_fetchers_for_market(fetchers, "hk")
+        elif is_tw:
+            # 台股个股仅 yfinance 支持，过滤掉必失败的 A 股源，避免空跑与日志噪音
+            fetchers = self._filter_daily_fetchers_for_market(fetchers, "tw")
         fetchers = self._filter_fetchers_by_capability(fetchers, capability="daily_data")
         total_fetchers = len(fetchers)
 
         if total_fetchers == 0:
-            market_label = "美股指数" if is_us_index else "美股" if is_us else "港股" if is_hk else "A股"
+            market_label = "美股指数" if is_us_index else "美股" if is_us else "港股" if is_hk else "台股" if is_tw else "A股"
             error_summary = f"{market_label} {stock_code} 获取失败:\n暂无可用数据源"
             logger.error(f"[数据源终止] {stock_code} 获取失败: {error_summary}")
             raise DataFetchError(error_summary)
@@ -1399,6 +1417,17 @@ class DataFetcherManager:
         is_us_index = is_us_index_code(stock_code)
         is_us = is_us_index or _is_us_code(stock_code)
         is_hk = (not is_us) and _is_hk_market(stock_code)
+        is_tw = (not is_us) and (not is_hk) and _is_tw_market(stock_code)
+
+        # 台股个股：走 YFinance（yahoo 直接支持 .TW 行情），不再误用 A 股 sz/sh 路由
+        if is_tw:
+            quote = self._try_fetcher_quote(stock_code, "YfinanceFetcher")
+            if quote is not None:
+                logger.info(f"[实时行情] 台股 {stock_code} 成功获取 (来源: YfinanceFetcher)")
+                return quote
+            if log_final_failure:
+                logger.info(f"[实时行情] 台股 {stock_code} 无可用数据源")
+            return None
 
         if is_us or is_hk:
             prefer_lb = self._longbridge_preferred() and not is_us_index
@@ -1703,7 +1732,8 @@ class DataFetcherManager:
             return self._cache_stock_name(stock_code, index_name) or index_name
 
         # 2. 尝试从实时行情中获取（最快，可按需禁用）
-        if allow_realtime:
+        #    台股个股跳过此步：yfinance 行情名为英文，改由下方 TWSE 名录取中文简称
+        if allow_realtime and not _is_tw_market(stock_code):
             quote = self.get_realtime_quote(raw_stock_code or stock_code, log_final_failure=False)
             if quote and hasattr(quote, 'name') and is_meaningful_stock_name(getattr(quote, 'name', ''), stock_code):
                 name = quote.name
